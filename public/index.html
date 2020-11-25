@@ -3,6 +3,91 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script charset="UTF-8" type="text/javascript">
+    window["adrum-start-time"] = new Date().getTime();
+    (function(config){
+        config.appKey = "SET-YOUR-APP-KEY";
+        config.adrumExtUrlHttp = "http://cdn.appdynamics.com";
+        config.adrumExtUrlHttps = "https://cdn.appdynamics.com";
+        // Configure your endpoints for the right collector endpoints
+        config.beaconUrlHttp = "http://fra-col.eum-appdynamics.com";
+        config.beaconUrlHttps = "https://fra-col.eum-appdynamics.com";
+        config.resTiming = {"bufSize":200,"clearResTimingOnBeaconSend":true};
+        config.maxUrlLength = 512;
+        // SPA2 is important to capture Virtual Page changes
+        config.spa = {"spa2":true};
+        // Provide payload of _all_ post XHR requests to the Ajax function below
+        // use this with care if payload is big!
+        config.xhr = {
+          payloadParams: [
+            {
+              method: 'POST'
+            },
+            {
+              method: 'GET'
+            }
+          ]
+        }
+        config.userEventInfo = {
+          // context is only relevant for Ajax requests, it contains the URL, method
+          // and if enabled above the data (=payload)
+          Ajax: function(context) {
+            try {
+              console.log('AppDynamics Ajax Callback', context)
+              const url = new URL(context.url)
+              if(url.pathname === '/api/users/login') {
+                const data = JSON.parse(context.data)
+                return {
+                  userData: {
+                    userName: data.user.email
+                  }
+                }
+              }
+              if(url.pathname === '/api/articles') {
+                const params = new URLSearchParams(url.search)
+                console.log(params.toString())
+                return {
+                  userData: {
+                    pageTag: params.get('tag')
+                  },
+                  userDataLong: {
+                    pageOffset: parseInt(params.get('offset')),
+                    pageLimit: parseInt(params.get('limit'))
+                  }
+                }
+              }
+            } catch(e) {
+              console.log('AppDynamics Ajax Callback Error', e)
+            }
+          },
+          PageView: function() {
+            console.log('AppDynamics PageView Callback')
+            const h1s = document.getElementsByTagName("h1");
+            if(h1s.length > 0) {
+              const title = h1s[0].textContent
+              return {
+                userData: {
+                  articleTitle: title
+                }
+              }
+            }
+          },
+          VPageView: function() {
+            console.log('AppDynamics VPageView Callback')
+            const h1s = document.getElementsByTagName("h1");
+            if(h1s.length > 0) {
+              const title = h1s[0].textContent
+              return {
+                userData: {
+                  articleTitle: title
+                }
+              }
+            }
+          }
+        };
+    })(window["adrum-config"] || (window["adrum-config"] = {}));
+    </script>
+    <script src="//cdn.appdynamics.com/adrum/adrum-20.9.0.3268.js"></script>
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
     <link rel="stylesheet" href="//demo.productionready.io/main.css">
     <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css">
